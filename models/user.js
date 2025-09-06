@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const ROLES = require("./utils/constant");
+const { required } = require("joi");
 
 const UserSchema = new mongoose.Schema(
   {
@@ -9,7 +10,7 @@ const UserSchema = new mongoose.Schema(
       type: String,
       required: [true, "please provide a username"],
       maxlength: 50,
-      minlength: 6,
+      minlength: 3,
     },
     email: {
       type: String,
@@ -27,7 +28,7 @@ const UserSchema = new mongoose.Schema(
         /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
         "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character",
       ],
-      minlength: [6, "password must be at least 6 characters long"],
+      minlength: [8, "password must be at least 6 characters long"],
     },
     profilePicture: {
       type: String,
@@ -38,14 +39,29 @@ const UserSchema = new mongoose.Schema(
       enum: Object.values(ROLES),
       default: ROLES.CUSTOMER,
     },
+    refreshToken: {
+      type: String,
+      required: false,
+    },
   },
   { timestamps: true }
 );
 
 UserSchema.pre("save", async function () {
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+  if (this.isModified("password")) {
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+  }
+  if (this.isModified("refreshToken") && this.refreshToken) {
+    const salt = await bcrypt.genSalt(10);
+    this.refreshToken = await bcrypt.hash(this.refreshToken, salt);
+  }
 });
+
+UserSchema.methods.compareRefreshToken = async function (cookiesRefreshToken) {
+  const isMatch = await bcrypt.compare(cookiesRefreshToken, this.refreshToken);
+  return isMatch;
+};
 
 UserSchema.methods.comparePassword = async function (candidatePassword) {
   const isMatch = await bcrypt.compare(candidatePassword, this.password);
@@ -62,8 +78,18 @@ UserSchema.methods.createJWT = function () {
   );
 };
 
+UserSchema.methods.createRefreshToken = function () {
+  return jwt.sign(
+    { userId: this._id, username: this.username },
+    process.env.REFRESH_TOKEN_SECRET,
+    {
+      expiresIn: process.env.REFRESH_TOKEN_LIFETIME,
+    }
+  );
+};
+
 UserSchema.methods.promoteToAdmin = async function () {
-  if ((this.role = ROLES.ADMIN)) {
+  if (this.role === ROLES.ADMIN) {
     throw new Error("user is already an admit");
   }
   this.role = ROLES.ADMIN;

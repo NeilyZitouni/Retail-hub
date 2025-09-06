@@ -1,9 +1,22 @@
 const { StatusCodes } = require("http-status-codes");
 const User = require("../models/user");
+const { UnauthorizedError, NotFoundError } = require("../errors");
+const jwt = require("jsonwebtoken");
+
 const register = async (req, res) => {
   const user = await User.create({ ...req.body });
-  const token = user.createJWT();
-  res.status(StatusCodes.CREATED).json({ username: user.getName(), token });
+  const accessToken = user.createJWT();
+  const refreshToken = user.createRefreshToken();
+  user.refreshToken = refreshToken;
+  await user.save();
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: true, 
+    sameSite: "Strict",
+  });
+  res
+    .status(StatusCodes.CREATED)
+    .json({ username: user.getName(), accessToken });
 };
 
 const login = async (req, res) => {
@@ -25,11 +38,51 @@ const login = async (req, res) => {
       .status(StatusCodes.BAD_REQUEST)
       .json({ msg: "invalid password" });
   }
-  const token = user.createJWT();
-  res.status(StatusCodes.OK).json({ user: { name: user.username }, token });
+  const accessToken = user.createJWT();
+  const refreshToken = user.createRefreshToken();
+  user.refreshToken = refreshToken;
+  await user.save();
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    secure: true, 
+    sameSite: "Strict",
+  });
+  res
+    .status(StatusCodes.OK)
+    .json({ user: { name: user.username }, accessToken });
+};
+
+const logout = async (req, res) => {
+  const cookieRefreshToken = req.cookies.refreshToken;
+  if (!cookieRefreshToken) {
+    throw new UnauthorizedError(
+      "Must provide refresh token please try again later"
+    );
+  }
+  const { userId, username, role } = jwt.verify(
+    cookieRefreshToken,
+    process.env.REFRESH_TOKEN_SECRET
+  );
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new NotFoundError(`No users with id ${userId}`);
+  }
+  const isMatch = await user.compareRefreshToken(cookieRefreshToken);
+  if (!isMatch) {
+    throw new UnauthorizedError("invalid refresh token");
+  }
+  user.refreshToken = null;
+  await user.save();
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "Strict",
+  });
+  res.status(StatusCodes.OK).json({ msg: "logout successful!!" });
 };
 
 module.exports = {
   login,
   register,
+  logout,
 };
