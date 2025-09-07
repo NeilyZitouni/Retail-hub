@@ -11,7 +11,7 @@ const register = async (req, res) => {
   await user.save();
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
-    secure: true, 
+    secure: true,
     sameSite: "Strict",
   });
   res
@@ -41,10 +41,10 @@ const login = async (req, res) => {
   const accessToken = user.createJWT();
   const refreshToken = user.createRefreshToken();
   user.refreshToken = refreshToken;
-  await user.save();
+  await user.save({ validateModifiedOnly: true });
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
-    secure: true, 
+    secure: true,
     sameSite: "Strict",
   });
   res
@@ -72,7 +72,7 @@ const logout = async (req, res) => {
     throw new UnauthorizedError("invalid refresh token");
   }
   user.refreshToken = null;
-  await user.save();
+  await user.save({ validateModifiedOnly: true });
   res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: true,

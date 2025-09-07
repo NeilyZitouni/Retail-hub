@@ -24,10 +24,6 @@ const UserSchema = new mongoose.Schema(
     password: {
       type: String,
       required: [true, "please provide a password"],
-      match: [
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/,
-        "Password must contain at least one lowercase letter, one uppercase letter, one number, and one special character",
-      ],
       minlength: [8, "password must be at least 6 characters long"],
     },
     profilePicture: {
@@ -90,7 +86,7 @@ UserSchema.methods.createRefreshToken = function () {
 
 UserSchema.methods.promoteToAdmin = async function () {
   if (this.role === ROLES.ADMIN) {
-    throw new Error("user is already an admit");
+    throw new Error("user is already an admin");
   }
   this.role = ROLES.ADMIN;
   await this.save();
