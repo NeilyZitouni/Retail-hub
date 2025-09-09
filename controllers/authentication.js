@@ -8,6 +8,26 @@ const register = async (req, res) => {
   const accessToken = user.createJWT();
   const refreshToken = user.createRefreshToken();
   user.refreshToken = refreshToken;
+  let ip;
+  ip =
+    (req.headers["x-forwarded-for"] || "").split(",")[0] ||
+    req.connection.remoteAddress;
+
+  if (ip === "127.0.0.1" || ip === "::1") {
+    ip = "8.8.8.8"; // fallback for testing in postman
+  }
+
+  console.log(`ip : ${ip}`);
+
+  const response = await fetch(`https://ipwho.is/${ip}`);
+  const data = await response.json();
+  if (!data.success) {
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ msg: "couldnt fetch the client's ip" });
+  }
+  user.coordinates.country = data.country;
+  user.coordinates.city = data.city;
   await user.save();
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
@@ -41,6 +61,23 @@ const login = async (req, res) => {
   const accessToken = user.createJWT();
   const refreshToken = user.createRefreshToken();
   user.refreshToken = refreshToken;
+  let ip;
+  ip =
+    (req.headers["x-forwarded-for"] || "").split(",")[0] ||
+    req.connection.remoteAddress;
+  if (ip === "127.0.0.1" || ip === "::1") {
+    ip = "8.8.8.8"; // fallback for testing in postman
+  }
+
+  const response = await fetch(`https://ipwho.is/${ip}`);
+  const data = await response.json();
+  if (!data.success) {
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ msg: "couldnt fetch the client's ip" });
+  }
+  user.coordinates.country = data.country;
+  user.coordinates.city = data.city;
   await user.save({ validateModifiedOnly: true });
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,

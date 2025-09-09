@@ -1,5 +1,6 @@
 const { StatusCodes } = require("http-status-codes");
 const User = require("../models/user");
+const user = require("../models/user");
 
 const getAllUsers = async (req, res) => {
   const users = await User.find({ role: "customer" }).select(
@@ -10,13 +11,14 @@ const getAllUsers = async (req, res) => {
       .status(StatusCodes.OK)
       .json({ msg: "there is no customers in the data base" });
   }
-  res.status(StatusCodes.OK).json(
-    users.map((user) => ({
+  res.status(StatusCodes.OK).json({
+    nbHits: users.length,
+    users: users.map((user) => ({
       id: user._id,
       username: user.username,
       email: user.email,
-    }))
-  );
+    })),
+  });
 };
 
 const getUser = async (req, res) => {
@@ -76,9 +78,24 @@ const changeUser = async (req, res) => {
   });
 };
 
+const getUsersCountriesStatistics = async (req, res) => {
+  const results = await User.aggregate([
+    { $match: { role: { $in: ["customer", "seller"] } } },
+    { $group: { _id: "$coordinates.country", count: { $sum: 1 } } },
+    { $sort: { count: -1 } },
+  ]);
+  if (!results) {
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ msg: "something went wrong please try again later" });
+  }
+  res.status(StatusCodes.OK).json({ results });
+};
+
 module.exports = {
   getAllUsers,
   getUser,
   deleteUser,
   changeUser,
+  getUsersCountriesStatistics,
 };

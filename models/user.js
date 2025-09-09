@@ -2,7 +2,6 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const ROLES = require("./utils/constant");
-const { required } = require("joi");
 
 const UserSchema = new mongoose.Schema(
   {
@@ -38,6 +37,16 @@ const UserSchema = new mongoose.Schema(
     refreshToken: {
       type: String,
       required: false,
+    },
+    coordinates: {
+      country: {
+        type: String,
+        required: false,
+      },
+      city: {
+        type: String,
+        required: false,
+      },
     },
   },
   { timestamps: true }
