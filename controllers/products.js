@@ -144,6 +144,26 @@ const getAllProductsBySubCategory = async (req, res) => {
   res.status(StatusCodes.OK).json({ nbHits: results.length, results });
 };
 
+const getAllProductsByPriceCategory = async (req, res) => {
+  const { pricecategory } = req.query;
+  if (!pricecategory) {
+    return res
+      .status(StatusCodes.BAD_REQUEST)
+      .json({ msg: "must provide a priceCategory" });
+  }
+  const results = await Product.find({
+    priceCategory: { $all: [pricecategory] },
+  })
+    .select("name price description")
+    .sort("-price");
+  if (!results) {
+    return res
+      .status(StatusCodes.NOT_FOUND)
+      .json({ msg: "no item matches the price category you chose" });
+  }
+  res.status(StatusCodes.OK).json({ nbHits: results.length, results });
+};
+
 module.exports = {
   getAllproducts,
   getProduct,
@@ -153,4 +173,5 @@ module.exports = {
   getAllProductsCreatedByUser,
   getAllProductsByCategory,
   getAllProductsBySubCategory,
+  getAllProductsByPriceCategory,
 };
