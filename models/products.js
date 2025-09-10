@@ -15,15 +15,30 @@ const ProductSchema = new mongoose.Schema(
       required: false,
       maxlength: [120, "description must have at most 120 characters"],
     },
-    company: {
+    brand: {
       type: String,
       required: [true, "must enter a company"],
       maxlength: [120, "company name must be less than 120 characters long"],
     },
     category: {
       type: String,
-      enum: Object.values(ProductCategories),
+      enum: Object.keys(ProductCategories),
       required: [true, "must enter products categorie"],
+      index: true,
+    },
+    subCategory: {
+      type: String,
+      required: [true, "Please enter a subcategory for your product"],
+      valudate: {
+        validation: function (val) {
+          return (
+            ProductCategories[this.category] &&
+            ProductCategories[this.category].includes(val)
+          );
+        },
+        message: (props) =>
+          `${props.value} is not a valid subcategory for category ${props.instance.category}`,
+      },
       index: true,
     },
     price: {
