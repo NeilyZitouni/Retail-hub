@@ -110,6 +110,40 @@ const deleteProduct = async (req, res) => {
   res.status(StatusCodes.OK).json({ msg: "deleted the product successfully" });
 };
 
+const getAllProductsByCategory = async (req, res) => {
+  const { category } = req.query;
+  if (!category) {
+    return res.status(StatusCodes.BAD_REQUEST).json("please choose a category");
+  }
+  const results = await Product.find({ category: { $all: [category] } })
+    .select("name price description")
+    .sort("-price");
+  if (!results) {
+    return res
+      .status(StatusCodes.NOT_FOUND)
+      .json("nothing matches the category you have chosen");
+  }
+  res.status(StatusCodes.OK).json({ nbHits: results.length, results });
+};
+
+const getAllProductsBySubCategory = async (req, res) => {
+  const { subcategory } = req.query;
+  if (!subcategory) {
+    return res
+      .status(StatusCodes.BAD_REQUEST)
+      .json({ msg: "please enter a subcategorty" });
+  }
+  const results = await Product.find({ subCategory: { $all: [subcategory] } })
+    .select("name price description")
+    .sort("-price");
+  if (!results) {
+    return res
+      .status(StatusCodes.NOT_FOUND)
+      .json({ msg: "nothing matches the subcategory you chose" });
+  }
+  res.status(StatusCodes.OK).json({ nbHits: results.length, results });
+};
+
 module.exports = {
   getAllproducts,
   getProduct,
@@ -117,4 +151,6 @@ module.exports = {
   updateProduct,
   deleteProduct,
   getAllProductsCreatedByUser,
+  getAllProductsByCategory,
+  getAllProductsBySubCategory,
 };
