@@ -98,7 +98,7 @@ UserSchema.methods.promoteToAdmin = async function () {
     throw new Error("user is already an admin");
   }
   this.role = ROLES.ADMIN;
-  await this.save();
+  await this.save({ validateModifiedOnly: true });
   return this;
 };
 

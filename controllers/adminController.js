@@ -1,6 +1,6 @@
 const { StatusCodes } = require("http-status-codes");
 const User = require("../models/user");
-const user = require("../models/user");
+const Product = require("../models/products");
 
 const getAllUsers = async (req, res) => {
   const users = await User.find({ role: "customer" }).select(
@@ -92,10 +92,52 @@ const getUsersCountriesStatistics = async (req, res) => {
   res.status(StatusCodes.OK).json({ results });
 };
 
+const productCategoryStatistics = async (req, res) => {
+  const results = await Product.aggregate([
+    { $group: { _id: "$category", count: { $sum: 1 } } },
+    { $sort: { count: -1 } },
+  ]);
+  if (!results) {
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ msg: "something went wrong please try again later" });
+  }
+  res.status(StatusCodes.OK).json({ results });
+};
+
+const productSubcategoryStatistics = async (req, res) => {
+  const results = await Product.aggregate([
+    { $group: { _id: "$subCategory", count: { $sum: 1 } } },
+    { $sort: { count: -1 } },
+  ]);
+  if (!results) {
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ msg: "something went wrong please try again later" });
+  }
+  res.status(StatusCodes.OK).json({ results });
+};
+
+const productPricecategoryStatistics = async (req, res) => {
+  const results = await Product.aggregate([
+    { $group: { _id: "$priceCategory", count: { $sum: 1 } } },
+    { $sort: { count: -1 } },
+  ]);
+  if (!results) {
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ msg: "something went wrong please try again later" });
+  }
+  res.status(StatusCodes.OK).json({ results });
+};
+
 module.exports = {
   getAllUsers,
   getUser,
   deleteUser,
   changeUser,
   getUsersCountriesStatistics,
+  productCategoryStatistics,
+  productSubcategoryStatistics,
+  productPricecategoryStatistics,
 };

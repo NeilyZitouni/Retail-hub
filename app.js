@@ -15,6 +15,7 @@ const authMiddleware = require("./middleware/auth");
 const errorHandler = require("./middleware/errorHandler");
 const AdminRoutes = require("./routes/adminroutes");
 const adminAuth = require("./middleware/adminAuth");
+const searchRoutes = require("./routes/search");
 
 const { admin, adminRouter } = require("./admin");
 
@@ -27,6 +28,7 @@ app.use(admin.options.rootPath, adminRouter);
 app.use("/api/v1/auth", authenticationRoute);
 app.use("/api/v1/products", authMiddleware, productsRoute);
 app.use("/api/v1/admin", authMiddleware, adminAuth, AdminRoutes);
+app.use("/api/v1/search", authMiddleware, searchRoutes);
 
 app.use(errorHandler);
 
