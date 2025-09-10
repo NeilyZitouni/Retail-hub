@@ -29,15 +29,14 @@ const ProductSchema = new mongoose.Schema(
     subCategory: {
       type: String,
       required: [true, "Please enter a subcategory for your product"],
-      valudate: {
-        validation: function (val) {
+      validate: {
+        validator: function (val) {
           return (
             ProductCategories[this.category] &&
             ProductCategories[this.category].includes(val)
           );
         },
-        message: (props) =>
-          `${props.value} is not a valid subcategory for category ${props.instance.category}`,
+        message: (props) => `${props.value} is not a valid subcategory `,
       },
       index: true,
     },
@@ -65,10 +64,10 @@ const ProductSchema = new mongoose.Schema(
 
 ProductSchema.pre("save", function () {
   if (this.isModified("price")) {
-    if (0 < this.price && this.price > 50) {
+    if (0 < this.price && this.price <= 50) {
       this.priceCategory = priceCategories.CHEAP;
     } else {
-      if (this.price < 150) {
+      if (this.price <= 150) {
         this.priceCategory = priceCategories.MEDIUM;
       } else {
         this.priceCategory = priceCategories.EXPENSIVE;
@@ -85,31 +84,39 @@ ProductSchema.methods.getCategory = function () {
   return this.category;
 };
 
+ProductSchema.methods.getSubcategory = function () {
+  return this.subCategory;
+};
+
 ProductSchema.methods.getPrice = function () {
   return this.price;
 };
 
+ProductSchema.methods.getBrand = function () {
+  return this.brand;
+};
+
 ProductSchema.methods.changeName = async function (name) {
   this.name = name;
-  await this.save();
+  await this.save({ validateModifiedOnly: true });
   return this;
 };
 
 ProductSchema.methods.changePrice = async function (newPrice) {
   this.price = newPrice;
-  await this.save();
+  await this.save({ validateModifiedOnly: true });
   return this;
 };
 
 ProductSchema.methods.changeDescription = async function (newDescription) {
   this.description = newDescription;
-  await this.save();
+  await this.save({ validateModifiedOnly: true });
   return this;
 };
 
-ProductSchema.methods.changeCompany = async function (newCompany) {
-  this.company = newCompany;
-  await this.save();
+ProductSchema.methods.changeBrand = async function (newCompany) {
+  this.brand = newCompany;
+  await this.save({ validateModifiedOnly: true });
   return this;
 };
 

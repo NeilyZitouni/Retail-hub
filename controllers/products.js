@@ -7,7 +7,7 @@ const getAllproducts = async (req, res) => {
   if (products.length === 0) {
     return res
       .status(StatusCodes.NOT_FOUND)
-      .json({ msg: `no product with id : ${id}` });
+      .json({ msg: `the database is empty !!!` });
   }
   res.status(StatusCodes.OK).json({
     nbHits: products.length,

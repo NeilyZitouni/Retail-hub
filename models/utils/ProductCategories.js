@@ -55,6 +55,7 @@ const TAGS = {
     "modems",
 
     // Gaming
+    "consoles",
     "gaming console",
     "game console",
     "playstation",
