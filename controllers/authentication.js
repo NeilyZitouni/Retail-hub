@@ -1,7 +1,10 @@
+require("dotenv").config();
 const { StatusCodes } = require("http-status-codes");
 const User = require("../models/user");
 const { UnauthorizedError, NotFoundError } = require("../errors");
 const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
+const { welcomeEmailTemplate } = require("../static/registerEmailTemplate");
 
 const register = async (req, res) => {
   const user = await User.create({ ...req.body });
@@ -17,8 +20,6 @@ const register = async (req, res) => {
     ip = "8.8.8.8"; // fallback for testing in postman
   }
 
-  console.log(`ip : ${ip}`);
-
   const response = await fetch(`https://ipwho.is/${ip}`);
   const data = await response.json();
   if (!data.success) {
@@ -29,6 +30,25 @@ const register = async (req, res) => {
   user.coordinates.country = data.country;
   user.coordinates.city = data.city;
   await user.save();
+
+  const transporter = nodemailer.createTransport({
+    host: "smtp.sendgrid.net",
+    port: 587,
+    auth: {
+      user: "apikey",
+      pass: process.env.SENDGRID_API_KEY,
+    },
+  });
+
+  const mailOptions = {
+    from: "retailhubnoreply@gmail.com",
+    to: user.email,
+    subject: "Registration confirmation",
+    html: welcomeEmailTemplate(user.email, user.username),
+  };
+  await transporter.sendMail(mailOptions);
+  await user.save();
+
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: true,
